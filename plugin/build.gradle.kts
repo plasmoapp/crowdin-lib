@@ -8,6 +8,12 @@ dependencies {
     api(project(":"))
 }
 
+tasks {
+    java {
+        withSourcesJar()
+    }
+}
+
 gradlePlugin {
     plugins {
         create("crowdin") {
