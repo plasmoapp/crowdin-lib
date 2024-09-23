@@ -1,8 +1,13 @@
 package su.plo.crowdin
 
+import java.net.URL
+
 open class CrowdinParams {
 
-    lateinit var projectId: String
+    var projectId: String? = null
+    var url: URL? = null
+    var keyTransformer: Crowdin.KeyTransformer? = null
+
     var resourceDir = "languages"
     var sourceFileName: String? = null
 

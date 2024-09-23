@@ -2,20 +2,20 @@ package su.plo.crowdin
 
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
+import su.plo.crowdin.Crowdin.KeyTransformer
 import java.io.IOException
 import java.net.URL
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import java.util.zip.ZipInputStream
 
-internal class Crowdin(
-    private val projectId: String
+class Crowdin(
+    private val url: URL,
+    private val keyTransformer: KeyTransformer = DEFAULT_KEY_TRANSFORMER,
 ) {
 
     @Throws(IOException::class)
     fun downloadRawTranslations(fileName: String? = null): Map<String, ByteArray> {
-        val url = URL("https://crowdin.com/backend/download/project/$projectId.zip")
-
         return CACHE.get(url) {
             val connection = url.openConnection()
             connection.connectTimeout = 3_000
@@ -32,9 +32,13 @@ internal class Crowdin(
                     ?.let { entry.key.endsWith(it) }
                     ?: JSON_PATTERN.matcher(entry.key).matches()
             }
-            .map { it.key.substringBefore("/") to it.value }
-            .filter { CROWDIN_CODE_TO_MC_CODE.containsKey(it.first) }
-            .associate { CROWDIN_CODE_TO_MC_CODE[it.first]!! to it.second }
+            .map { keyTransformer.transform(it.key) to it.value }
+            .filter { it.first != null }
+            .associate { it.first!! to it.second }
+    }
+
+    fun interface KeyTransformer {
+        fun transform(key: String): String?
     }
 
     companion object {
@@ -45,6 +49,7 @@ internal class Crowdin(
             .build();
 
         private val JSON_PATTERN = Pattern.compile("^([a-z]{2}(-[A-Z]{2})?)/(.+\\.json)$")
+
         // https://github.com/gbl/CrowdinTranslate/blob/a9a8b6fcbffd60b511e6c7514630129cf3866db7/src/main/java/de/guntram/mcmod/crowdintranslate/CrowdinTranslate.java#L27
         private val MC_CODE_TO_CROWDIN_CODE: Map<String, String> = HashMap<String, String>().also {
             it["af_za"] = "af"
@@ -173,5 +178,13 @@ internal class Crowdin(
             MC_CODE_TO_CROWDIN_CODE
                 .map { it.value to it.key }
                 .toMap()
+
+        val GITHUB_LOCALE_KEY_TRANSFORMER: KeyTransformer = KeyTransformer {
+            it.split("/").getOrNull(1)?.lowercase()
+        }
+
+        val DEFAULT_KEY_TRANSFORMER: KeyTransformer = KeyTransformer {
+            CROWDIN_CODE_TO_MC_CODE[it.substringBefore("/")]
+        }
     }
 }

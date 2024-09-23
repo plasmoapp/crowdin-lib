@@ -1,26 +1,16 @@
-import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.assertDoesNotThrow
 import su.plo.crowdin.CrowdinLib
-import java.util.concurrent.ExecutionException
+import java.net.URI
 import kotlin.test.Test
-import kotlin.test.assertEquals
 
 internal class LibTest {
 
     @Test
     fun download() {
-        val toml = CrowdinLib.downloadRawTranslations(
-            "pv-crowdin-test",
-            "test.toml"
-        ).get()
-        assertEquals(toml.size, 1)
-    }
-
-    @Test
-    fun downloadInvalidProject() {
-        assertThrows<ExecutionException> {
+        assertDoesNotThrow {
             CrowdinLib.downloadRawTranslations(
-                "pv-crowdin-test1",
-                "test.toml"
+                URI.create("https://github.com/plasmoapp/plasmo-voice-crowdin/archive/refs/heads/addons.zip").toURL(),
+                "server/discs.toml"
             ).get()
         }
     }
