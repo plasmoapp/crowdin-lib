@@ -4,10 +4,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.future
 import java.net.URL
+import java.net.URLConnection
 import java.util.concurrent.CompletableFuture
 
 object CrowdinLib {
-
     /**
      * Downloads and returns map of raw files.
      *
@@ -23,9 +23,14 @@ object CrowdinLib {
         crowdinProjectId: String,
         fileName: String? = null,
         keyTransformer: Crowdin.KeyTransformer = Crowdin.DEFAULT_KEY_TRANSFORMER,
+        connectionBuilder: URLConnection.() -> Unit = {},
     ): CompletableFuture<Map<String, ByteArray>> =
         CoroutineScope(Dispatchers.Default).future {
-            Crowdin(URL("https://crowdin.com/backend/download/project/$crowdinProjectId.zip"), keyTransformer).downloadRawTranslations(fileName)
+            Crowdin(
+                URL("https://crowdin.com/backend/download/project/$crowdinProjectId.zip"),
+                keyTransformer,
+                connectionBuilder,
+            ).downloadRawTranslations(fileName)
         }
 
     /**
@@ -43,8 +48,9 @@ object CrowdinLib {
         url: URL,
         fileName: String? = null,
         keyTransformer: Crowdin.KeyTransformer = Crowdin.GITHUB_LOCALE_KEY_TRANSFORMER,
+        connectionBuilder: URLConnection.() -> Unit = {},
     ): CompletableFuture<Map<String, ByteArray>> =
         CoroutineScope(Dispatchers.Default).future {
-            Crowdin(url, keyTransformer).downloadRawTranslations(fileName)
+            Crowdin(url, keyTransformer, connectionBuilder).downloadRawTranslations(fileName)
         }
 }

@@ -5,6 +5,7 @@ import com.google.common.cache.CacheBuilder
 import su.plo.crowdin.Crowdin.KeyTransformer
 import java.io.IOException
 import java.net.URL
+import java.net.URLConnection
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import java.util.zip.ZipInputStream
@@ -12,6 +13,7 @@ import java.util.zip.ZipInputStream
 class Crowdin(
     private val url: URL,
     private val keyTransformer: KeyTransformer = DEFAULT_KEY_TRANSFORMER,
+    private val connectionBuilder: URLConnection.() -> Unit = {},
 ) {
 
     @Throws(IOException::class)
@@ -19,6 +21,8 @@ class Crowdin(
         return CACHE.get(url) {
             val connection = url.openConnection()
             connection.connectTimeout = 3_000
+            connection.readTimeout = 30_000
+            connection.apply(connectionBuilder)
 
             ZipInputStream(connection.getInputStream()).use { zis ->
                 return@get generateSequence { zis.nextEntry }
